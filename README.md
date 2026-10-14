@@ -2,7 +2,7 @@
 
 A Jarvis-inspired voice and hand-gesture AI assistant that runs in a single HTML file. Talk to it in English or Hindi, steer its holographic planet with your hands, and let it open apps, start calls, and set timers. Bring your own Claude or DeepSeek API key.
 
-**Live demo:** https://crafticx-code.github.io/Horizon-ai-assistant-/
+**website is here :** https://crafticx-code.github.io/Horizon-ai-assistant-/
 
 > Horizon is an independent project inspired by science-fiction AI assistants. It is not affiliated with any film studio or brand.
 
