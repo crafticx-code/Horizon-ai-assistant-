@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horizon AI</title>
+<style>
+:root{--h:38;color-scheme:dark;--bg:hsl(var(--h) 59% 6%);--ln:hsl(var(--h) 54% 27%);--c:hsl(var(--h) 75% 59%);--c2:hsl(var(--h) 75% 55%);--g:#2ee59d;--o:#ffb347;--tx:hsl(var(--h) 75% 92%);--mu:hsl(var(--h) 28% 63%);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1100px 560px at 50% 0,hsl(var(--h) 57% 18%) 0,hsl(var(--h) 59% 6%) 62%) hsl(var(--h) 59% 6%);color:var(--tx);font:14px/1.4 "Trebuchet MS","Segoe UI",system-ui,sans-serif;min-height:100%;padding:10px 10px 24px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-bottom:10px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo i{width:34px;height:34px;border-radius:50%;border:4px solid var(--c);box-shadow:0 0 14px var(--c),inset 0 0 10px var(--c2)}
+.logo b{font-size:20px;letter-spacing:.28em}.logo small{display:block;font-size:9px;letter-spacing:.2em;color:var(--mu)}
+.on-pill{margin-left:auto;padding:3px 12px;border:1px solid var(--g);border-radius:20px;color:var(--g);font-size:12px}
+.clock{text-align:right;font-size:12px;color:var(--mu)}.clock b{display:block;font-size:22px;color:#fff;letter-spacing:.06em}
+nav{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px}
+nav button{flex:none;background:hsl(var(--h) 58% 14%);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:7px 12px;font:inherit}
+nav button.a{background:linear-gradient(hsl(var(--h) 60% 30%),hsl(var(--h) 62% 23%));border-color:var(--c);box-shadow:0 0 12px hsl(var(--h) 75% 59% / 0.33)}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.p{background:linear-gradient(160deg,hsl(var(--h) 55% 16% / 0.87),hsl(var(--h) 57% 10%));border:1px solid var(--ln);border-radius:10px;padding:12px;box-shadow:inset 0 0 22px hsl(var(--h) 68% 44% / 0.13)}
+.p h3{margin:0 0 10px;font-size:12px;letter-spacing:.14em;color:var(--c);display:flex;justify-content:space-between}
+.p h3 em{font-style:normal;color:var(--g)}
+@media(min-width:760px){.core{grid-column:span 2}}
+.stage{height:270px;display:grid;place-items:center;perspective:700px;touch-action:pan-y;overflow:hidden}
+.orb{position:relative;width:180px;height:180px;transform-style:preserve-3d;transform:translate(var(--x,0px),var(--y,0px)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--s,1));transition:transform .12s linear}
+.sph{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,hsl(var(--h) 75% 80%) 0,hsl(var(--h) 75% 55%) 36%,hsl(var(--h) 67% 22%) 72%,hsl(var(--h) 67% 11%));box-shadow:0 0 50px hsl(var(--h) 75% 55% / 0.80),0 0 120px hsl(var(--h) 75% 55% / 0.33);display:grid;place-content:center;text-align:center}
+.sph b{letter-spacing:.3em;font-size:19px;padding-left:.3em}.sph span{letter-spacing:.4em;font-size:11px}.sph small{font-size:10px;color:hsl(var(--h) 75% 87%)}
+.r{position:absolute;border-radius:50%;animation:spin 9s linear infinite}
+.r1{inset:-50px;border:1.5px solid hsl(var(--h) 75% 69% / 0.60);transform:rotateX(72deg)}
+.r2{inset:-28px;border:1.5px dashed hsl(var(--h) 75% 69% / 0.53);transform:rotateX(72deg) rotateY(25deg);animation-direction:reverse}
+.fast .r{animation-duration:1.4s}
+@keyframes spin{to{rotate:360deg}}
+@media(prefers-reduced-motion:reduce){.r{animation:none}}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.chip{border:1px solid var(--ln);border-radius:8px;padding:6px 10px;color:var(--mu);font-size:12px}
+.chip b{display:block;color:var(--tx);font-size:11px;letter-spacing:.1em}
+.chip.a{border-color:var(--c);color:var(--c);box-shadow:0 0 12px hsl(var(--h) 75% 59% / 0.40)}
+.talk{width:100%;margin-top:10px;padding:12px;border-radius:30px;border:1px solid var(--c);background:linear-gradient(hsl(var(--h) 59% 24%),hsl(var(--h) 62% 18%));color:#fff;font:inherit;font-size:16px;letter-spacing:.1em;box-shadow:0 0 18px hsl(var(--h) 75% 59% / 0.33)}
+.talk small{display:block;font-size:11px;color:var(--mu);letter-spacing:0}
+ul{list-style:none;margin:0;padding:0}
+.ag li{display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-bottom:1px solid hsl(var(--h) 52% 23%)}
+.ag small,.tk small{display:block;color:var(--mu);font-size:11px}
+.ag span{color:var(--g);font-size:12px}.ag span:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--g);margin-right:6px;box-shadow:0 0 8px var(--g)}
+.feed li{display:grid;grid-template-columns:1fr auto;padding:7px 4px;border-bottom:1px solid hsl(var(--h) 52% 23%);font-size:13px}
+.feed span{grid-column:1;color:var(--mu);font-size:12px}.feed time{grid-row:1;grid-column:2;color:var(--mu);font-size:11px}
+.cam{position:relative;aspect-ratio:4/3;border:1px solid var(--c);border-radius:8px;overflow:hidden;background:hsl(var(--h) 58% 7%)}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:.55}
+.cam canvas{position:absolute;inset:0;width:100%;height:100%}
+.cam p{position:absolute;inset:0;margin:0;display:grid;place-items:center;text-align:center;padding:16px;color:var(--mu);font-size:13px}
+.btn{margin-top:8px;width:100%;padding:9px;background:hsl(var(--h) 62% 23%);color:#fff;border:1px solid var(--c);border-radius:8px;font:inherit}
+.gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-top:10px}
+.gs li{border:1px solid var(--ln);border-radius:6px;padding:5px 8px;color:var(--mu);font-size:12px;transition:.2s}
+.gs li.on{border-color:var(--g);color:var(--g);box-shadow:0 0 10px #2ee59d88}
+.note{font-size:11px;color:var(--mu);margin:8px 0 0}
+.tk li{padding:8px 0}.bar{height:5px;border-radius:3px;background:hsl(var(--h) 55% 20%);margin-top:6px}.bar i{display:block;height:100%;border-radius:3px;background:var(--c);box-shadow:0 0 8px var(--c)}
+.qc{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qc button{background:hsl(var(--h) 58% 14%);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:10px;font:inherit;text-align:left}
+.mon{display:flex;justify-content:space-around}
+.ring{text-align:center;font-size:11px;color:var(--mu)}
+.ring div{width:78px;height:78px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--v)*1%),hsl(var(--h) 50% 19%) 0);display:grid;place-items:center;margin-bottom:4px}
+.ring div span{width:60px;height:60px;border-radius:50%;background:hsl(var(--h) 58% 12%);display:grid;place-items:center;color:#fff;font-size:13px}
+[hidden]{display:none!important}.txt{width:100%;margin-top:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--ln);background:hsl(var(--h) 57% 10%);color:#fff;font:inherit}
+.stage{position:relative}.stage canvas{position:absolute;inset:0;width:100%;height:100%}.lbl{position:absolute;bottom:4px;left:0;right:0;text-align:center;letter-spacing:.35em;font-size:13px;color:hsl(var(--h) 75% 74%);text-shadow:0 0 10px hsl(var(--h) 75% 56%);pointer-events:none}.lbl small{display:block;letter-spacing:.25em;font-size:9px;color:hsl(var(--h) 38% 57%)}
+button:focus-visible{outline:2px solid var(--o);outline-offset:2px}
+.themes{display:flex;gap:10px;align-items:center;margin:0 0 10px;font-size:11px;letter-spacing:.14em;color:var(--mu);text-transform:uppercase}.themes button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;padding:0}.themes button.s{border-color:#fff;box-shadow:0 0 12px #fff8}
+html[lang=hi] *{letter-spacing:normal!important}
+.pm{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--ln)}
+.pm input{appearance:none;-webkit-appearance:none;flex:none;width:46px;height:26px;border-radius:13px;background:hsl(var(--h) 40% 14%);border:1px solid var(--ln);position:relative;margin:0}
+.pm input:before{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--mu);transition:.2s}
+.pm input:checked{background:var(--c2);border-color:var(--c)}
+.pm input:checked:before{left:23px;background:#fff}
+.feed .go{grid-column:1/-1;margin:0}
+#lang button,#prov button{width:auto;height:auto;border-radius:8px;padding:5px 14px;color:var(--tx);background:hsl(var(--h) 45% 15%);border:1px solid var(--ln);font:inherit;letter-spacing:0;text-transform:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+</style></head><body>
+<header>
+ <div class="logo"><i></i><div><b>HORIZON AI</b><small>Your personal AI assistant</small></div></div>
+ <div class="on-pill">System online</div>
+ <div class="clock"><b id="clk">--:--</b><span id="dt"></span></div>
+</header>
+<nav id="nav"><button class="a">Command Center</button><button>AI Assistant</button><button>Voice Control</button><button>Apps &amp; Tools</button><button>Web Search</button><button>Files</button><button>Calendar</button><button>Settings</button></nav>
+<div class="themes" id="themes"><span>Theme</span></div>
+<div class="themes" id="lang"><span>Language</span><button data-l="en">EN</button><button data-l="hi">हिं</button></div>
+
+<div class="grid">
+ <section class="p core">
+  <div class="stage" id="stage"><canvas id="holo"></canvas><div class="lbl">HORIZON<small>AI CORE · v1.0.0</small></div></div>
+  <div class="chips">
+   <div class="chip a"><b>Understanding</b>Listening…</div>
+   <div class="chip"><b>Reasoning</b>Thinking…</div>
+   <div class="chip"><b>Processing</b>Analyzing…</div>
+   <div class="chip"><b>Responding</b>Ready</div>
+  </div>
+  <button class="talk" id="talk">Talk to Horizon<small>Tap, or hold an open palm to the camera</small></button>
+  <input class="txt" id="txt" placeholder="Or type a command and press Enter" autocomplete="off"><button class="btn" id="wk">Hands-free: off</button>
+  <div class="themes" id="prov"><span>AI</span><button data-v="claude">Claude</button><button data-v="deepseek">DeepSeek</button></div>
+  <input class="txt" id="key" type="password" placeholder="Paste Claude API key (sk-ant-...)" autocomplete="off"><button class="btn" id="sk">Save key</button>
+  <div id="dsx" hidden><input class="txt" id="dsm" placeholder="Model (default: deepseek-flash)" autocomplete="off"><input class="txt" id="dsp" placeholder="Proxy URL (only if direct calls fail)" autocomplete="off"></div>
+ </section>
+
+ <section class="p"><h3>HAND TRACKING <em id="hs">OFF</em></h3>
+  <div class="cam"><video id="v" playsinline muted></video><canvas id="o" width="320" height="240"></canvas><p id="msg">Enable the camera, then show both hands. Everything stays on your device.</p></div>
+  <button class="btn" id="cb">Enable camera</button><button class="btn" id="sw">One hand acting backwards? Tap to swap left/right</button>
+  <ul class="gs"><li data-g="Pinch">Pinch</li><li data-g="Swipe">Swipe</li><li data-g="Point">Point</li><li data-g="Palm">Open palm</li><li data-g="Move">Move</li></ul>
+  <p class="note">Left hand: bring it closer to zoom in, pull it back to zoom out. Right hand: move it to push the orb that way. Right pinch held resets zoom, right open palm held still talks.</p>
+ </section>
+
+ <section class="p"><h3>AI AGENTS <em>5/5 active</em></h3>
+  <ul class="ag"><li><div>Chat Agent<small>General conversation</small></div><span>Active</span></li><li><div>Research Agent<small>Web search &amp; info</small></div><span>Active</span></li><li><div>Task Agent<small>Planning &amp; productivity</small></div><span>Active</span></li><li><div>System Agent<small>Device &amp; app control</small></div><span>Active</span></li><li><div>Creative Agent<small>Media &amp; content</small></div><span>Active</span></li></ul>
+ </section>
+
+ <section class="p"><h3>LIVE FEED <em>Live</em></h3><ul class="feed" id="feed"></ul></section>
+
+  <section class="p"><h3>PERMISSIONS <em>on this device</em></h3>
+  <label class="pm"><span>Open apps (YouTube, Spotify, WhatsApp…)</span><input type="checkbox" data-p="apps"></label>
+  <label class="pm"><span>Calls and SMS (opens the dialer)</span><input type="checkbox" data-p="calls"></label>
+  <label class="pm"><span>Open websites</span><input type="checkbox" data-p="web"></label>
+  <label class="pm"><span>Ask me before acting</span><input type="checkbox" data-p="ask"></label>
+  <div class="two"><input class="txt" id="cn" placeholder="Contact name" style="margin:0"><input class="txt" id="cp" placeholder="Phone number" inputmode="tel" style="margin:0"></div>
+  <button class="btn" id="ca">Add contact</button>
+  <p class="note" id="cl"></p>
+  <p class="note">Browsers can open the dialer and apps, but you tap Call or Send. Fully automatic calling needs a native app.</p>
+ </section>
+ <section class="p"><h3>ACTIVE TASKS <em>3 running</em></h3>
+  <ul class="tk"><li>Research latest AI tools<small>Searching the web…</small><div class="bar"><i style="width:65%"></i></div></li><li>Make a study plan<small>Planning schedule…</small><div class="bar"><i style="width:40%"></i></div></li><li>Play music<small>Opening player…</small><div class="bar"><i style="width:20%"></i></div></li></ul>
+ </section>
+
+ <section class="p"><h3>QUICK COMMANDS</h3>
+  <div class="qc" id="qc"><button>Start focus mode</button><button data-cam>Open camera</button><button>Start voice call</button><button>Run calculator</button><button>Open settings</button><button>Create note</button></div>
+ </section>
+
+ <section class="p"><h3>SYSTEM MONITOR</h3>
+  <div class="mon"><div class="ring"><div id="r0"><span>18%</span></div>CPU</div><div class="ring"><div id="r1"><span>62%</span></div>RAM</div><div class="ring"><div id="r2"><span>41%</span></div>Disk</div></div>
+ </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let cur=0,on=false,stream=null,cx=.5,cy=.5,last=0;
+const chips=[...document.querySelectorAll('.chip')],names=['Understanding','Reasoning','Processing','Responding'];
+const setState=i=>{cur=i;chips.forEach((c,j)=>c.classList.toggle('a',j===i))};
+const feed=$('feed');
+function add(t,x){const li=document.createElement('li');li.innerHTML='<b></b><span></span><time></time>';li.children[0].textContent=t;li.children[1].textContent=x;li.children[2].textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});feed.prepend(li);while(feed.children.length>6)feed.lastChild.remove()}
+add('System','Horizon is online. Say, type, or gesture a command.');
+const tickClock=()=>{const d=new Date();$('clk').textContent=d.toLocaleTimeString();$('dt').textContent=d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short',year:'numeric'})};
+tickClock();setInterval(tickClock,1000);
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('a'));b.classList.add('a')});
+
+/* orb reacts to hand position */
+const T={x:0,y:0,s:1};
+function place(x,y){T.x=x-.5;T.y=y-.5}
+function flash(g){const li=document.querySelector('[data-g="'+g+'"]');li.classList.add('on');setTimeout(()=>li.classList.remove('on'),450)}
+function gesture(vx){const t=Date.now();flash('Move');
+ if(Math.abs(vx)>.05&&t-last>800){last=t;flash('Swipe');setState((cur+1)%4);add('Gesture','Swipe '+(vx>0?'right':'left')+' → '+names[cur]);const st=$('stage');st.classList.add('fast');setTimeout(()=>st.classList.remove('fast'),700)}}
+
+/* demo mode: pointer acts as the hand */
+const st=$('stage');let px=.5;
+st.addEventListener('pointermove',e=>{const r=st.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width,ny=(e.clientY-r.top)/r.height;const vx=nx-px;px=nx;cx=nx;cy=ny;place(nx,ny,300);gesture(vx)});
+st.addEventListener('pointerleave',()=>place(.5,.5,0));
+
+/* ---- chat with Claude (direct from this page, no server) ---- */
+const history=[];let listening=false,speaking=false,wake=null;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const MODEL='claude-sonnet-5-5'; // change this if your account uses a different model
+const SYSTEM="You are Horizon, a calm, capable voice assistant. Replies are spoken aloud: answer in one or two short sentences, no markdown, no lists. Use tools to act instead of describing actions.";
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let LANG=store.get('hl')||'en';
+const L=(en,hi)=>LANG==='hi'?hi:en;
+const rlang=()=>LANG==='hi'?'hi-IN':navigator.language;
+const WAKE=['horizon','होराइज़न','होराइजन','होराइज़ोन','होराइजोन','होरिजन','हॉरिज़न','हॉराइज़न'];
+const perm=()=>Object.assign({apps:1,calls:0,web:1,ask:1},JSON.parse(store.get('hperm')||'{}'));
+const contacts=()=>JSON.parse(store.get('hc')||'{}');
+const isAnd=/Android/i.test(navigator.userAgent),enc=encodeURIComponent;
+const APPS={
+ youtube:['com.google.android.youtube',q=>q?'https://www.youtube.com/results?search_query='+enc(q):'https://www.youtube.com/'],
+ spotify:['com.spotify.music',q=>q?'https://open.spotify.com/search/'+enc(q):'https://open.spotify.com/'],
+ whatsapp:['com.whatsapp',()=>'https://wa.me/'],
+ maps:['com.google.android.apps.maps',q=>'https://www.google.com/maps/search/?api=1&query='+enc(q||'')],
+ gmail:['com.google.android.gm',()=>'https://mail.google.com/'],
+ instagram:['com.instagram.android',()=>'https://www.instagram.com/'],
+ telegram:['org.telegram.messenger',()=>'https://t.me/'],
+ netflix:['com.netflix.mediaclient',()=>'https://www.netflix.com/'],
+ facebook:['com.facebook.katana',()=>'https://www.facebook.com/'],
+ x:['com.twitter.android',()=>'https://x.com/'],
+ chrome:['com.android.chrome',q=>q?'https://www.google.com/search?q='+enc(q):'https://www.google.com/'],
+ playstore:['com.android.vending',q=>'https://play.google.com/store/search?c=apps&q='+enc(q||'')]
+};
+/* On Android an intent:// link targets the app directly and falls back to the website if it is not installed. */
+function asIntent(pkg,url){if(!isAnd)return url;const u=new URL(url);return 'intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package='+pkg+';S.browser_fallback_url='+enc(url)+';end'}
+function appLink(name,q){
+ if(name==='camera')return isAnd?'intent:#Intent;action=android.media.action.IMAGE_CAPTURE;end':null;
+ if(name==='settings')return isAnd?'intent:#Intent;action=android.settings.SETTINGS;end':null;
+ const a=APPS[name];return a?asIntent(a[0],a[1](q)):null;
+}
+function num(s){const d=String(s).replace(/[^\d+]/g,'');return /^[6-9]\d{9}$/.test(d)?'+91'+d:d} /* 10-digit numbers are assumed to be Indian */
+function who(to){
+ const t=String(to).trim();if(/^[+\d][\d\s-]{5,}$/.test(t))return{n:num(t),name:t};
+ const c=contacts(),k=Object.keys(c).find(x=>x.toLowerCase()===t.toLowerCase())||Object.keys(c).find(x=>t.toLowerCase().includes(x.toLowerCase()));
+ return k?{n:c[k],name:k}:null;
+}
+const TOOLS=[
+ {name:'get_time',description:'Get the current date and time.',input_schema:{type:'object',properties:{}}},
+ {name:'set_timer',description:'Start a countdown timer.',input_schema:{type:'object',properties:{seconds:{type:'integer'},label:{type:'string'}},required:['seconds','label']}},
+ {name:'open_website',description:'Open a website in a new tab.',input_schema:{type:'object',properties:{url:{type:'string'}},required:['url']}},
+ {name:'open_app',description:'Open an app on the phone, optionally searching inside it, for example YouTube or Spotify with a query.',input_schema:{type:'object',properties:{app:{type:'string',enum:[...Object.keys(APPS),'camera','settings']},query:{type:'string'}},required:['app']}},
+ {name:'call',description:'Call a saved contact name or a phone number. This opens the dialer.',input_schema:{type:'object',properties:{to:{type:'string'}},required:['to']}},
+ {name:'send_message',description:'Send a text (sms) or WhatsApp message to a saved contact or number.',input_schema:{type:'object',properties:{to:{type:'string'},text:{type:'string'},via:{type:'string',enum:['sms','whatsapp']}}
