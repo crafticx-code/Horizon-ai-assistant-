@@ -204,4 +204,237 @@ const TOOLS=[
  {name:'open_website',description:'Open a website in a new tab.',input_schema:{type:'object',properties:{url:{type:'string'}},required:['url']}},
  {name:'open_app',description:'Open an app on the phone, optionally searching inside it, for example YouTube or Spotify with a query.',input_schema:{type:'object',properties:{app:{type:'string',enum:[...Object.keys(APPS),'camera','settings']},query:{type:'string'}},required:['app']}},
  {name:'call',description:'Call a saved contact name or a phone number. This opens the dialer.',input_schema:{type:'object',properties:{to:{type:'string'}},required:['to']}},
- {name:'send_message',description:'Send a text (sms) or WhatsApp message to a saved contact or number.',input_schema:{type:'object',properties:{to:{type:'string'},text:{type:'string'},via:{type:'string',enum:['sms','whatsapp']}}
+ {name:'send_message',description:'Send a text (sms) or WhatsApp message to a saved contact or number.',input_schema:{type:'object',properties:{to:{type:'string'},text:{type:'string'},via:{type:'string',enum:['sms','whatsapp']}},required:['to','text']}},
+ {name:'add_note',description:'Save a short note on this device.',input_schema:{type:'object',properties:{text:{type:'string'}},required:['text']}},
+ {name:'list_notes',description:'Read back the saved notes.',input_schema:{type:'object',properties:{}}}
+];
+/* only hand the model the tools the user has allowed */
+function allowedTools(){const p=perm();return TOOLS.filter(t=>t.name==='open_app'?p.apps:t.name==='open_website'?p.web:(t.name==='call'||t.name==='send_message')?p.calls:true)}
+
+/* ---- permissions and contacts ---- */
+document.querySelectorAll('[data-p]').forEach(i=>{i.checked=!!perm()[i.dataset.p];i.onchange=()=>{const p=perm();p[i.dataset.p]=i.checked?1:0;store.set('hperm',JSON.stringify(p));add('Permissions',i.parentNode.firstElementChild.textContent+': '+(i.checked?'on':'off'))}});
+function showContacts(){const c=contacts(),k=Object.keys(c);$('cl').textContent=k.length?'Saved: '+k.map(n=>n+' ('+c[n]+')').join(', '):'No contacts saved yet.'}
+$('ca').onclick=()=>{const n=$('cn').value.trim(),p=num($('cp').value);if(!n||p.replace(/\D/g,'').length<6){add('Contacts','Enter a name and a phone number.');return}
+ const c=contacts();c[n]=p;store.set('hc',JSON.stringify(c));$('cn').value=$('cp').value='';showContacts();add('Contacts','Saved '+n)};
+showContacts();
+
+/* ---- running actions ---- */
+function go(url,label){
+ if(!perm().ask){const w=url.startsWith('http')?window.open(url,'_blank','noopener'):null;if(!w)location.href=url;return 'Opened '+label+'.'}
+ const li=document.createElement('li'),b=document.createElement('button');b.className='btn go';b.textContent='Tap to open '+label;
+ b.onclick=()=>{url.startsWith('http')?window.open(url,'_blank','noopener'):(location.href=url);li.remove()};
+ li.append(b);feed.prepend(li);return 'Showed a button so the user can tap to open '+label+'.';
+}
+const notes=()=>JSON.parse(store.get('hn')||'[]');
+function runTool(name,a){
+ try{
+  if(name==='get_time')return new Date().toString();
+  if(name==='set_timer'){const s=Math.max(1,Math.min(86400,+a.seconds||0)),lb=a.label||'Timer';add('Timer',lb+' · '+s+'s');setTimeout(()=>{add('Timer',lb+' is done');say(L(lb+' is done.',lb+' पूरा हो गया।'));try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}},s*1000);return 'Timer set for '+s+' seconds.'}
+  if(name==='open_website'){if(!perm().web)return 'Opening websites is turned off.';let u=String(a.url||'').trim();if(!/^https?:\/\//i.test(u))u='https://'+u;add('Web',u);return go(u,new URL(u).host)}
+  if(name==='open_app'){if(!perm().apps)return 'Opening apps is turned off.';const l=appLink(a.app,a.query);if(!l)return 'That app can only be opened on Android.';add('App',a.app+(a.query?' · '+a.query:''));return go(l,a.app)}
+  if(name==='call'){if(!perm().calls)return 'Calls are turned off in permissions.';const w=who(a.to);if(!w)return 'No saved contact named '+a.to+'.';add('Call',w.name);return go('tel:'+w.n,'the dialer for '+w.name)}
+  if(name==='send_message'){if(!perm().calls)return 'Messages are turned off in permissions.';const w=who(a.to);if(!w)return 'No saved contact named '+a.to+'.';add('Message',w.name+': '+a.text);
+   return a.via==='whatsapp'?go('https://wa.me/'+w.n.replace(/\D/g,'')+'?text='+enc(a.text),'WhatsApp for '+w.name):go('sms:'+w.n+'?body='+enc(a.text),'messages for '+w.name)}
+  if(name==='add_note'){const n=notes();n.push(String(a.text));store.set('hn',JSON.stringify(n.slice(-50)));add('Note',a.text);return 'Note saved.'}
+  if(name==='list_notes'){const n=notes();return n.length?n.join('\n'):'No notes saved.'}
+ }catch(e){return 'Error: '+e.message}
+ return 'Unknown tool.';
+}
+
+/* ---- AI providers ---- */
+let PROV=store.get('hprov')||'claude';
+const keyName=()=>PROV==='claude'?'hk':'hdk';
+function showProv(){document.querySelectorAll('#prov button').forEach(b=>b.classList.toggle('s',b.dataset.v===PROV));$('dsx').hidden=PROV!=='deepseek';
+ $('key').placeholder=PROV==='claude'?'Paste Claude API key (sk-ant-...)':'Paste DeepSeek API key (sk-...)';$('key').value='';$('sk').textContent=store.get(keyName())?'Key saved · tap to replace':'Save key';
+ $('dsm').value=store.get('hdm')||'';$('dsp').value=store.get('hdp')||''}
+document.querySelectorAll('#prov button').forEach(b=>b.onclick=()=>{PROV=b.dataset.v;store.set('hprov',PROV);history.length=0;showProv();add('AI','Using '+b.textContent)});
+$('sk').onclick=()=>{const k=$('key').value.trim();if(!k){add('AI','Paste a key first.');return}store.set(keyName(),k);$('key').value='';$('sk').textContent='Key saved · tap to replace';add('AI','Key saved on this device')};
+$('dsm').onchange=()=>store.set('hdm',$('dsm').value.trim());$('dsp').onchange=()=>store.set('hdp',$('dsp').value.trim());
+showProv();
+const sysPrompt=()=>SYSTEM+(LANG==='hi'?' Always reply in Hindi written in Devanagari script.':'')+' The current time is '+new Date().toString()+'.';
+
+async function askClaude(key){
+ for(let i=0;i<6;i++){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+   body:JSON.stringify({model:MODEL,max_tokens:400,system:sysPrompt(),tools:allowedTools(),messages:history})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error&&d.error.message||('HTTP '+r.status));
+  history.push({role:'assistant',content:d.content});
+  const uses=d.content.filter(c=>c.type==='tool_use');
+  if(!uses.length)return d.content.filter(c=>c.type==='text').map(c=>c.text).join(' ').trim();
+  setState(2);history.push({role:'user',content:uses.map(u=>({type:'tool_result',tool_use_id:u.id,content:String(runTool(u.name,u.input||{}))}))});
+ }
+ return L('Done.','हो गया।');
+}
+async function askDeepSeek(key){
+ const url=(store.get('hdp')||'https://api.deepseek.com').replace(/\/+$/,'')+'/chat/completions';
+ const tools=allowedTools().map(t=>({type:'function',function:{name:t.name,description:t.description,parameters:t.input_schema}}));
+ for(let i=0;i<6;i++){
+  let r;try{r=await fetch(url,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key},body:JSON.stringify({model:store.get('hdm')||'deepseek-flash',max_tokens:400,messages:[{role:'system',content:sysPrompt()},...history],tools})})}
+  catch(e){throw new Error('Cannot reach DeepSeek from the browser. Add a proxy URL (see the README).')}
+  const d=await r.json();if(!r.ok)throw new Error(d.error&&d.error.message||('HTTP '+r.status));
+  const m=d.choices[0].message;history.push(m);
+  if(!m.tool_calls||!m.tool_calls.length)return (m.content||'').trim();
+  setState(2);m.tool_calls.forEach(c=>{let a={};try{a=JSON.parse(c.function.arguments||'{}')}catch(e){}history.push({role:'tool',tool_call_id:c.id,content:String(runTool(c.function.name,a))})});
+ }
+ return L('Done.','हो गया।');
+}
+let busy=false;
+async function ask(text){
+ text=String(text||'').trim();if(!text||busy)return;
+ add(L('You','आप'),text);const key=store.get(keyName());
+ if(!key){const m=L('Paste your '+(PROV==='claude'?'Claude':'DeepSeek')+' API key and tap Save key first.','पहले अपनी API key डालें और Save key दबाएँ।');add('Horizon',m);say(m);return}
+ busy=true;setState(1);pulse(1);history.push({role:'user',content:text});
+ try{const a=await(PROV==='claude'?askClaude(key):askDeepSeek(key))||L('Done.','हो गया।');setState(3);add('Horizon',a);say(a)}
+ catch(e){history.pop();setState(0);add('Error',e.message);say(L('Sorry, I could not reach the AI.','माफ़ कीजिए, AI से जुड़ नहीं पाया।'))}
+ finally{busy=false;while(history.length>30)history.shift();while(history.length&&(history[0].role!=='user'||typeof history[0].content!=='string'))history.shift()}
+}
+
+/* ---- voice ---- */
+function voiceFor(){const v=speechSynthesis.getVoices(),w=LANG==='hi'?'hi':(navigator.language||'en').slice(0,2);return v.find(x=>x.lang.toLowerCase().startsWith(w))||null}
+function say(t){
+ if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=rlang();const v=voiceFor();if(v)u.voice=v;
+ u.onstart=()=>{speaking=true;setState(3)};u.onboundary=()=>pulse(1);u.onend=u.onerror=()=>{speaking=false;setState(0);if(wake)startWake()};
+ if(wake)try{wake.stop()}catch(e){}speechSynthesis.speak(u);
+}
+if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>{};
+function listen(){
+ if(!SR){add('Voice','Speech recognition is not supported here. Try Chrome, or type instead.');return}
+ if(listening)return;if(wake)try{wake.stop()}catch(e){}
+ speechSynthesis&&speechSynthesis.cancel();
+ const r=new SR();r.lang=rlang();r.interimResults=false;listening=true;setState(0);pulse(1);$('talk').firstChild.textContent=L('Listening…','सुन रहा हूँ…');
+ r.onresult=e=>ask(e.results[0][0].transcript);
+ r.onerror=e=>{if(e.error==='not-allowed')add('Voice','Microphone blocked. Open this page over https and allow the mic.');else if(e.error!=='no-speech'&&e.error!=='aborted')add('Voice',e.error)};
+ r.onend=()=>{listening=false;$('talk').firstChild.textContent=L('Talk to Horizon','होराइज़न से बात करें');if(wake&&!busy&&!speaking)startWake()};
+ try{r.start()}catch(e){listening=false}
+}
+$('talk').onclick=listen;
+$('txt').onkeydown=e=>{if(e.key==='Enter'){ask($('txt').value);$('txt').value=''}};
+
+/* hands-free: listen continuously for the wake word */
+function startWake(){
+ if(!wake||listening||speaking)return;
+ try{wake.lang=rlang();wake.start()}catch(e){}
+}
+$('wk').onclick=()=>{
+ if(!SR){add('Voice','Hands-free needs speech recognition (Chrome works best).');return}
+ if(wake){const w=wake;wake=null;try{w.stop()}catch(e){}$('wk').textContent='Hands-free: off';add('Voice','Hands-free off');return}
+ wake=new SR();wake.continuous=true;wake.interimResults=false;
+ wake.onresult=e=>{const t=e.results[e.results.length-1][0].transcript.trim(),lo=t.toLowerCase(),w=WAKE.find(x=>lo.includes(x));if(!w)return;
+  const rest=t.slice(lo.indexOf(w)+w.length).replace(/^[\s,.!?।]+/,'');try{wake.stop()}catch(err){}
+  rest.length>2?ask(rest):(say(L('Yes?','जी?')),setTimeout(listen,900))};
+ wake.onend=()=>{if(wake&&!listening&&!speaking&&!busy)setTimeout(startWake,300)};
+ wake.onerror=e=>{if(e.error==='not-allowed'){add('Voice','Microphone blocked.');$('wk').click()}};
+ $('wk').textContent='Hands-free: on · say "Hey Horizon"';add('Voice','Hands-free on');startWake();
+};
+
+/* ---- language and themes ---- */
+function setLang(l){LANG=l;store.set('hl',l);document.documentElement.lang=l;document.querySelectorAll('#lang button').forEach(b=>b.classList.toggle('s',b.dataset.l===l));
+ $('talk').firstChild.textContent=L('Talk to Horizon','होराइज़न से बात करें');$('txt').placeholder=L('Or type a command and press Enter','या कमांड लिखें और Enter दबाएँ')}
+document.querySelectorAll('#lang button').forEach(b=>b.onclick=()=>{setLang(b.dataset.l);history.length=0;add('Language',b.dataset.l==='hi'?'हिन्दी':'English')});
+setLang(LANG);
+const THEMES=[['Gold',38],['Arc Blue',198],['Matrix Green',135],['Crimson',355],['Violet',272]];
+let HUE=+(store.get('hth')||38);
+function setTheme(h){HUE=h;store.set('hth',h);document.documentElement.style.setProperty('--h',h);document.querySelectorAll('#themes button').forEach(b=>b.classList.toggle('s',+b.dataset.h===h))}
+THEMES.forEach(([n,h])=>{const b=document.createElement('button');b.dataset.h=h;b.title=b.ariaLabel=n;b.style.background='hsl('+h+' 75% 55%)';b.onclick=()=>setTheme(h);$('themes').append(b)});
+setTheme(HUE);
+
+/* ---- quick commands ---- */
+document.querySelectorAll('#qc button').forEach(b=>b.onclick=()=>{
+ const t=b.textContent;
+ if(b.hasAttribute('data-cam'))return add('App',runTool('open_app',{app:'camera'}));
+ if(t==='Start voice call')return listen();
+ if(t==='Start focus mode')return add('Focus',runTool('set_timer',{seconds:1500,label:'Focus session'}));
+ if(t==='Run calculator')return add('Web',runTool('open_website',{url:'https://www.google.com/search?q=calculator'}));
+ if(t==='Open settings')return add('App',runTool('open_app',{app:'settings'}));
+ if(t==='Create note'){const n=prompt('Note');if(n)runTool('add_note',{text:n})}
+});
+
+/* ---- system monitor (estimated: browsers do not expose real CPU or disk use) ---- */
+let lag=0,lt=performance.now();
+setInterval(()=>{const n=performance.now();lag=lag*.7+Math.max(0,n-lt-500)*.3;lt=n},500);
+function ring(i,v){v=Math.round(Math.max(1,Math.min(99,v)));const e=$('r'+i);e.style.setProperty('--v',v);e.firstChild.textContent=v+'%'}
+async function monitor(){
+ ring(0,8+lag*2+(busy?30:0)+Math.random()*6);
+ const m=performance.memory;ring(1,m?m.usedJSHeapSize/m.jsHeapSizeLimit*100*8:55+Math.random()*8);
+ try{const s=await navigator.storage.estimate();ring(2,s.quota?s.usage/s.quota*100*50+20:41)}catch(e){ring(2,41)}
+}
+monitor();setInterval(monitor,3000);
+
+/* ---- holographic planet ---- */
+const cv=$('holo'),g=cv.getContext('2d');
+const slow=(navigator.hardwareConcurrency||4)<=4&&/Mobi|Android/i.test(navigator.userAgent)||matchMedia('(prefers-reduced-motion:reduce)').matches;
+const NP=slow?140:320,P=[];
+for(let i=0;i<NP;i++){const y=1-2*(i+.5)/NP,r=Math.sqrt(1-y*y),a=i*2.39996;P.push([Math.cos(a)*r,y,Math.sin(a)*r])}
+const E=[];P.forEach((p,i)=>{const d=P.map((q,j)=>[j,(p[0]-q[0])**2+(p[1]-q[1])**2+(p[2]-q[2])**2]).filter(x=>x[0]>i).sort((a,b)=>a[1]-b[1]).slice(0,2);d.forEach(x=>{if(x[1]<.06)E.push([i,x[0]])})});
+const packets=[];let energy=0,rot=0,view={x:0,y:0,s:1};
+function pulse(v){energy=Math.min(1.4,energy+.35*v)}
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,slow?1:2);cv.width=r.width*d;cv.height=r.height*d;g.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',size);size();
+function frame(t){
+ const w=cv.width/(Math.min(devicePixelRatio||1,slow?1:2)),h=cv.height/(Math.min(devicePixelRatio||1,slow?1:2));
+ view.x+=(T.x-view.x)*.08;view.y+=(T.y-view.y)*.08;view.s+=(T.s-view.s)*.08;energy*=.96;
+ rot+=(busy||cur===2?.012:.004)+energy*.01;
+ const R=Math.min(w,h)*.3*view.s*(1+energy*.05),cx0=w/2+view.x*w*.5,cy0=h/2-10+view.y*h*.5,tilt=-view.y*.8+.3,yaw=rot+view.x*1.2;
+ const col=(l,a)=>'hsla('+HUE+',75%,'+l+'%,'+a+')';
+ g.clearRect(0,0,w,h);
+ const glow=g.createRadialGradient(cx0,cy0,0,cx0,cy0,R*1.6);glow.addColorStop(0,col(60,.35+energy*.2));glow.addColorStop(.5,col(45,.12));glow.addColorStop(1,col(30,0));g.fillStyle=glow;g.fillRect(0,0,w,h);
+ const cy1=Math.cos(yaw),sy=Math.sin(yaw),ct=Math.cos(tilt),stt=Math.sin(tilt);
+ const S=P.map(([x,y,z])=>{const x1=x*cy1+z*sy,z1=-x*sy+z*cy1,y1=y*ct-z1*stt,z2=y*stt+z1*ct;return[cx0+x1*R,cy0+y1*R,z2]});
+ g.lineWidth=1;
+ for(const[a,b]of E){const z=(S[a][2]+S[b][2])/2;g.strokeStyle=col(65,z>0?.45:.1);g.beginPath();g.moveTo(S[a][0],S[a][1]);g.lineTo(S[b][0],S[b][1]);g.stroke()}
+ for(const s of S){g.fillStyle=col(75,s[2]>0?.9:.25);g.fillRect(s[0]-1,s[1]-1,s[2]>0?2.2:1.4,s[2]>0?2.2:1.4)}
+ if(packets.length<(slow?6:16)&&Math.random()<.2+energy)packets.push({e:E[Math.random()*E.length|0],t:0});
+ for(let i=packets.length-1;i>=0;i--){const p=packets[i];p.t+=.04+energy*.04;if(p.t>=1){packets.splice(i,1);continue}const A=S[p.e[0]],B=S[p.e[1]];
+  g.fillStyle='rgba(255,255,255,.95)';g.beginPath();g.arc(A[0]+(B[0]-A[0])*p.t,A[1]+(B[1]-A[1])*p.t,2,0,7);g.fill()}
+ const core=g.createRadialGradient(cx0,cy0,0,cx0,cy0,R*.45);core.addColorStop(0,'rgba(255,255,255,'+(.7+energy*.3)+')');core.addColorStop(.4,col(65,.5));core.addColorStop(1,col(50,0));g.fillStyle=core;g.beginPath();g.arc(cx0,cy0,R*.45,0,7);g.fill();
+ g.save();g.translate(cx0,cy0);
+ [[1.35,1,t/3000],[1.55,-1,t/2200],[1.2,1,t/1500]].forEach(([k,dir,a],i)=>{g.strokeStyle=col(70,.5-i*.1);g.setLineDash(i===1?[6,8]:i===2?[2,10]:[]);g.beginPath();g.ellipse(0,0,R*k,R*k*.32,dir*a%6.283,0,6.283);g.stroke()});
+ g.setLineDash([]);g.strokeStyle=col(70,.35);for(let i=0;i<24;i++){const a=i/24*6.283+t/4000;g.beginPath();g.moveTo(Math.cos(a)*R*1.75,Math.sin(a)*R*1.75);g.lineTo(Math.cos(a)*R*1.85,Math.sin(a)*R*1.85);g.stroke()}
+ g.restore();
+ if(!slow){g.fillStyle='rgba(0,0,0,.12)';for(let y=(t/40)%4;y<h;y+=4)g.fillRect(0,y,w,1)}
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+st.addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();T.s=Math.max(.5,Math.min(2.2,T.s-e.deltaY*.002))},{passive:false});
+
+/* ---- hand tracking (MediaPipe, runs on the device) ---- */
+let hands=null,swap=store.get('hsw')==='1',hold={pinch:0,palm:0},palmAt=null,prevRx=null;
+const ov=$('o'),og=ov.getContext('2d'),vid=$('v');
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const isOpen=l=>[8,12,16,20].every(i=>dist(l[i],l[0])>dist(l[i-2],l[0])*1.1);
+$('sw').onclick=()=>{swap=!swap;store.set('hsw',swap?'1':'0');add('Gesture','Left and right hands swapped')};
+async function camOn(){
+ if(on){stream&&stream.getTracks().forEach(t=>t.stop());on=false;$('hs').textContent='OFF';$('cb').textContent='Enable camera';$('msg').hidden=false;og.clearRect(0,0,320,240);return}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){add('Camera','Camera needs https and a modern browser.');return}
+ $('msg').textContent='Loading hand tracking…';
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});vid.srcObject=stream;await vid.play();
+  if(!hands){const V=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+   const fs=await V.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+   hands=await V.HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2})}
+  on=true;$('hs').textContent='ON';$('cb').textContent='Turn camera off';$('msg').hidden=true;add('Camera','Hand tracking on');track();
+ }catch(e){$('msg').textContent='Camera or hand tracking unavailable: '+e.message;add('Camera',e.message)}
+}
+$('cb').onclick=camOn;
+let lastV=-1;
+function track(){
+ if(!on)return;requestAnimationFrame(track);
+ if(vid.currentTime===lastV||vid.readyState<2)return;lastV=vid.currentTime;
+ const res=hands.detectForVideo(vid,performance.now());og.clearRect(0,0,320,240);
+ let right=null,left=null;
+ (res.landmarks||[]).forEach((l,i)=>{
+  /* the camera image is not mirrored, so MediaPipe's "Left" is the user's right hand */
+  const lab=res.handednesses[i][0].categoryName,isRight=(lab==='Left')!==swap;if(isRight)right=l;else left=l;
+  og.fillStyle=isRight?'#2ee59d':'hsl('+HUE+',75%,60%)';l.forEach(p=>{og.beginPath();og.arc((1-p.x)*320,p.y*240,3,0,7);og.fill()});
+ });
+ const now=performance.now();
+ if(left){const sz=dist(left[0],left[9]);T.s=Math.max(.5,Math.min(2.2,(sz-.08)*7+.6))}
+ if(right){
+  const x=1-right[9].x,y=right[9].y;place(x,y);if(prevRx!==null)gesture(x-prevRx);prevRx=x;
+  if(dist(right[4],right[8])<.05){flash('Pinch');if(!hold.pinch)hold.pinch=now;else if(now-hold.pinch>800){T.s=1;hold.pinch=0;add('Gesture','Zoom reset')}}else hold.pinch=0;
+  if(isOpen(right)){flash('Palm');if(!hold.palm||!palmAt||dist(palmAt,right[9])>.04){hold.palm=now;palmAt=right[9]}else if(now-hold.palm>1200){hold.palm=0;palmAt=null;add('Gesture','Open palm → listening');listen()}}
+  else{hold.palm=0;palmAt=null;if(dist(right[8],right[0])>dist(right[12],right[0])*1.3)flash('Point')}
+ }else{prevRx=null;hold.pinch=hold.palm=0}
+}
+</script>
+</body></html>
